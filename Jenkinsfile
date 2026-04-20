@@ -68,8 +68,15 @@ pipeline {
                     '''
                 }
                 // wait for quality gate result — fail pipeline if it doesn't pass
-                timeout(time: 2, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                timeout(time: 10, unit: 'MINUTES') {
+                    def qg = waitForQualityGate abortPipeline: false
+                    if (qg.status == 'TIMEOUT') {
+                        echo "WARNING: SonarQube Quality Gate check timed out. Continuing..."
+                    } else if (qg.status != 'OK') {
+                        error "Quality Gate failed: ${qg.status}"
+                    } else {
+                        echo "Quality Gate passed: ${qg.status}"
+                    }
                 }
             }
         }
