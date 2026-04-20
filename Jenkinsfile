@@ -4,6 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "todo-api"
         IMAGE_TAG  = "1.0.${BUILD_NUMBER}"   // tagged per build
+        PATH       = "/Users/mohitduhan/bin:/opt/homebrew/bin:/usr/local/bin:${env.PATH}"
     }
 
     stages {
