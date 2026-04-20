@@ -1,0 +1,92 @@
+---
+- name: Deploy Todo API Application
+  hosts: localhost
+  connection: local
+  become: yes
+  vars:
+    app_name: "todo-api"
+    image_tag: "{{ lookup('env', 'IMAGE_TAG') | default('latest', true) }}"
+    staging_port: 3000
+    production_port: 3001
+
+  tasks:
+    - name: Ensure Docker is running
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Remove existing staging container
+      docker_container:
+        name: "{{ app_name }}-staging"
+        state: absent
+        force_kill: yes
+      ignore_errors: yes
+
+    - name: Deploy staging container
+      docker_container:
+        name: "{{ app_name }}-staging"
+        image: "{{ app_name }}:{{ image_tag }}"
+        state: started
+        restart_policy: unless-stopped
+        ports:
+          - "{{ staging_port }}:3000"
+        env:
+          NODE_ENV: "staging"
+        healthcheck:
+          test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+          interval: 30s
+          timeout: 10s
+          retries: 3
+          start_period: 10s
+
+    - name: Wait for staging health check
+      uri:
+        url: "http://localhost:{{ staging_port }}/health"
+        method: GET
+        status_code: 200
+      register: staging_health
+      until: staging_health.status == 200
+      retries: 10
+      delay: 3
+
+    - name: Remove existing production container
+      docker_container:
+        name: "{{ app_name }}-production"
+        state: absent
+        force_kill: yes
+      ignore_errors: yes
+
+    - name: Deploy production container
+      docker_container:
+        name: "{{ app_name }}-production"
+        image: "{{ app_name }}:{{ image_tag }}"
+        state: started
+        restart_policy: unless-stopped
+        ports:
+          - "{{ production_port }}:3000"
+        env:
+          NODE_ENV: "production"
+        healthcheck:
+          test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+          interval: 30s
+          timeout: 10s
+          retries: 3
+          start_period: 10s
+
+    - name: Wait for production health check
+      uri:
+        url: "http://localhost:{{ production_port }}/health"
+        method: GET
+        status_code: 200
+      register: prod_health
+      until: prod_health.status == 200
+      retries: 10
+      delay: 3
+
+    - name: Display deployment info
+      debug:
+        msg:
+          - "Staging deployed at: http://localhost:{{ staging_port }}"
+          - "Production deployed at: http://localhost:{{ production_port }}"
+          - "Image version: {{ image_tag }}"

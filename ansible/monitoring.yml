@@ -1,0 +1,105 @@
+---
+- name: Setup Monitoring Stack for Todo API
+  hosts: localhost
+  connection: local
+  become: yes
+  vars:
+    prometheus_port: 9090
+    grafana_port: 3002
+    grafana_admin_password: "admin"
+
+  tasks:
+    - name: Ensure monitoring directory exists
+      file:
+        path: /opt/monitoring
+        state: directory
+        mode: '0755'
+
+    - name: Create Prometheus configuration
+      copy:
+        dest: /opt/monitoring/prometheus.yml
+        content: |
+          global:
+            scrape_interval: 15s
+            evaluation_interval: 15s
+
+          scrape_configs:
+            - job_name: 'prometheus'
+              static_configs:
+                - targets: ['localhost:9090']
+
+            - job_name: 'todo-api-staging'
+              static_configs:
+                - targets: ['host.docker.internal:3000']
+              metrics_path: /metrics
+
+            - job_name: 'todo-api-production'
+              static_configs:
+                - targets: ['host.docker.internal:3001']
+              metrics_path: /metrics
+
+    - name: Remove existing Prometheus container
+      docker_container:
+        name: prometheus
+        state: absent
+        force_kill: yes
+      ignore_errors: yes
+
+    - name: Start Prometheus container
+      docker_container:
+        name: prometheus
+        image: prom/prometheus:latest
+        state: started
+        restart_policy: unless-stopped
+        ports:
+          - "{{ prometheus_port }}:9090"
+        volumes:
+          - /opt/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+    - name: Remove existing Grafana container
+      docker_container:
+        name: grafana
+        state: absent
+        force_kill: yes
+      ignore_errors: yes
+
+    - name: Start Grafana container
+      docker_container:
+        name: grafana
+        image: grafana/grafana:latest
+        state: started
+        restart_policy: unless-stopped
+        ports:
+          - "{{ grafana_port }}:3000"
+        env:
+          GF_SECURITY_ADMIN_PASSWORD: "{{ grafana_admin_password }}"
+          GF_INSTALL_PLUGINS: "grafana-clock-panel,grafana-simple-json-datasource"
+
+    - name: Wait for Prometheus to be ready
+      uri:
+        url: "http://localhost:{{ prometheus_port }}/-/healthy"
+        method: GET
+        status_code: 200
+      register: prometheus_health
+      until: prometheus_health.status == 200
+      retries: 15
+      delay: 2
+      ignore_errors: yes
+
+    - name: Wait for Grafana to be ready
+      uri:
+        url: "http://localhost:{{ grafana_port }}/api/health"
+        method: GET
+        status_code: 200
+      register: grafana_health
+      until: grafana_health.status == 200
+      retries: 15
+      delay: 2
+      ignore_errors: yes
+
+    - name: Display monitoring info
+      debug:
+        msg:
+          - "Prometheus: http://localhost:{{ prometheus_port }}"
+          - "Grafana: http://localhost:{{ grafana_port }}"
+          - "Grafana admin password: {{ grafana_admin_password }}"

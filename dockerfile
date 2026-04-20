@@ -9,6 +9,7 @@ RUN npm ci --only=production
 
 # copy source
 COPY src/ ./src/
+COPY tests/ ./tests/
 
 EXPOSE 3000
 

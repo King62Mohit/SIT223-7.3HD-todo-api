@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-api-service
+  labels:
+    app: todo-api
+spec:
+  selector:
+    app: todo-api
+  ports:
+    - port: 80
+      targetPort: 3000
+      protocol: TCP
+      name: http
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-api-staging-service
+  labels:
+    app: todo-api-staging
+spec:
+  selector:
+    app: todo-api-staging
+  ports:
+    - port: 80
+      targetPort: 3000
+      protocol: TCP
+      name: http
+  type: NodePort

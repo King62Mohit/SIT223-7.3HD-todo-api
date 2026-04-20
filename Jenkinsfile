@@ -18,7 +18,7 @@ pipeline {
                 sh 'npm ci'
 
                 echo "Building Docker image: ${IMAGE_NAME}:${IMAGE_TAG}"
-                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -f dockerfile ."
                 sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest"
 
                 echo "Build artefact: Docker image ${IMAGE_NAME}:${IMAGE_TAG}"
@@ -186,7 +186,10 @@ pipeline {
             echo "Pipeline failed — check stage logs above."
         }
         always {
-            echo "Build ${IMAGE_TAG} finished with status: ${currentBuild.result}"
+            script {
+                def result = currentBuild.result ?: 'SUCCESS'
+                echo "Build ${IMAGE_TAG} finished with status: ${result}"
+            }
         }
     }
 }
