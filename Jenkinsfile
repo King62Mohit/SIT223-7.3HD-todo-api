@@ -32,12 +32,12 @@ pipeline {
         stage('Test') {
             steps {
                 echo "Running automated tests..."
-                sh 'npm test -- --reporters=default --reporters=jest-junit --coverage'
+                sh 'JEST_JUNIT_OUTPUT_DIR=./coverage JEST_JUNIT_OUTPUT_NAME=junit.xml npm test -- --reporters=default --reporters=jest-junit --coverage'
             }
             post {
                 always {
                     // publish test results in Jenkins UI
-                    junit 'coverage/junit.xml'
+                    junit testResults: 'coverage/junit.xml', allowEmptyResults: true
                     publishHTML([
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,
