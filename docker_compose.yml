@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # the actual app — staging environment
+  todo-api:
+    build: .
+    container_name: todo-api-staging
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=staging
+    restart: unless-stopped
+
+  # production container (different port)
+  todo-api-prod:
+    build: .
+    container_name: todo-api-production
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+
+  # Prometheus — scrapes metrics from the app
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    restart: unless-stopped
+
+  # Grafana — visualises Prometheus metrics
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    restart: unless-stopped
