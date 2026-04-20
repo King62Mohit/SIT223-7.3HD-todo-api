@@ -32,7 +32,7 @@ pipeline {
         stage('Test') {
             steps {
                 echo "Running automated tests..."
-                sh 'npm test'
+                sh 'npm test -- --reporters=default --reporters=jest-junit --coverage'
             }
             post {
                 always {
@@ -40,6 +40,8 @@ pipeline {
                     junit 'coverage/junit.xml'
                     publishHTML([
                         allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
                         reportDir: 'coverage/lcov-report',
                         reportFiles: 'index.html',
                         reportName: 'Coverage Report'
