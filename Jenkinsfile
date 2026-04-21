@@ -57,13 +57,11 @@ pipeline {
         // ─────────────────────────────────────────
         stage('Code Quality') {
             steps {
-                echo "Running SonarCloud analysis..."
-                withSonarQubeEnv('SonarCloud') {
+                echo "Running SonarQube analysis..."
+                withSonarQubeEnv('SonarQube') {
                     sh '''
                         sonar-scanner \
-                          -Dsonar.host.url=https://sonarcloud.io \
-                          -Dsonar.projectKey=King62Mohit_SIT223-7.3HD-todo-api \
-                          -Dsonar.organization=King62Mohit \
+                          -Dsonar.projectKey=todo-api \
                           -Dsonar.sources=src \
                           -Dsonar.tests=tests \
                           -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
