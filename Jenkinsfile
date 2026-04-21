@@ -62,8 +62,8 @@ pipeline {
                     sh '''
                         sonar-scanner \
                           -Dsonar.host.url=https://sonarcloud.io \
-                          -Dsonar.projectKey=SIT223-7.3HD-todo-api \
-                          -Dsonar.organization=mohit-duhan \
+                          -Dsonar.projectKey=King62Mohit_SIT223-7.3HD-todo-api \
+                          -Dsonar.organization=King62Mohit \
                           -Dsonar.sources=src \
                           -Dsonar.tests=tests \
                           -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
